@@ -199,6 +199,7 @@ ISrsTsHandler::~ISrsTsHandler()
 
 SrsTsContext::SrsTsContext()
 {
+    ready = false;
     pure_audio = false;
     vcodec = SrsCodecVideoReserved;
     acodec = SrsCodecAudioReserved1;
@@ -234,6 +235,7 @@ void SrsTsContext::on_pmt_parsed()
 
 void SrsTsContext::reset()
 {
+    ready = false;
     vcodec = SrsCodecVideoReserved;
     acodec = SrsCodecAudioReserved1;
 }
@@ -432,6 +434,9 @@ int SrsTsContext::encode_pat_pmt(SrsFileWriter* writer, int16_t vpid, SrsTsStrea
             return ret;
         }
     }
+    
+    // When PAT and PMT are writen, the context is ready now.
+    ready = true;
 
     return ret;
 }
@@ -439,6 +444,13 @@ int SrsTsContext::encode_pat_pmt(SrsFileWriter* writer, int16_t vpid, SrsTsStrea
 int SrsTsContext::encode_pes(SrsFileWriter* writer, SrsTsMessage* msg, int16_t pid, SrsTsStream sid, bool pure_audio)
 {
     int ret = ERROR_SUCCESS;
+    
+    // Sometimes, the context is not ready(PAT/PMT write failed), error in this situation.
+    if (!ready) {
+        ret = ERROR_TS_CONTEXT_NOT_READY;
+        srs_error("TS: context not ready, ret=%d", ret);
+        return ret;
+    }
 
     if (msg->payload->length() == 0) {
         return ret;
@@ -3027,6 +3039,7 @@ int SrsTsCache::do_cache_avc(SrsAvcAacCodec* codec, SrsCodecSample* sample)
         video->payload->append((const char*)default_aud_nalu, 2);
     }
     
+    bool is_sps_pps_appended = false;
     // all sample use cont nalu header, except the sps-pps before IDR frame.
     for (int i = 0; i < sample->nb_sample_units; i++) {
         SrsCodecSampleUnit* sample_unit = &sample->sample_units[i];
@@ -3044,7 +3057,7 @@ int SrsTsCache::do_cache_avc(SrsAvcAacCodec* codec, SrsCodecSample* sample)
         
         // Insert sps/pps before IDR when there is no sps/pps in samples.
         // The sps/pps is parsed from sequence header(generally the first flv packet).
-        if (nal_unit_type == SrsAvcNaluTypeIDR && !sample->has_sps_pps) {
+        if (nal_unit_type == SrsAvcNaluTypeIDR && !sample->has_sps_pps && !is_sps_pps_appended) {
             if (codec->sequenceParameterSetLength > 0) {
                 srs_avc_insert_aud(video->payload, aud_inserted);
                 video->payload->append(codec->sequenceParameterSetNALUnit, codec->sequenceParameterSetLength);
@@ -3053,6 +3066,7 @@ int SrsTsCache::do_cache_avc(SrsAvcAacCodec* codec, SrsCodecSample* sample)
                 srs_avc_insert_aud(video->payload, aud_inserted);
                 video->payload->append(codec->pictureParameterSetNALUnit, codec->pictureParameterSetLength);
             }
+            is_sps_pps_appended = true;
         }
         
         // Insert the NALU to video in annexb.

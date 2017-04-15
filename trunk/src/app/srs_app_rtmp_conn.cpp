@@ -481,6 +481,14 @@ int SrsRtmpConn::stream_service_cycle()
         return ret;
     }
     srs_info("security check ok");
+    
+    // Never allow the empty stream name, for HLS may write to a file with empty name.
+    // @see https://github.com/ossrs/srs/issues/834
+    if (req->stream.empty()) {
+        ret = ERROR_RTMP_STREAM_NAME_EMPTY;
+        srs_error("RTMP: Empty stream name not allowed, ret=%d", ret);
+        return ret;
+    }
 
     // client is identified, set the timeout to service timeout.
     rtmp->set_recv_timeout(SRS_CONSTS_RTMP_RECV_TIMEOUT_US);
@@ -532,6 +540,16 @@ int SrsRtmpConn::stream_service_cycle()
             srs_verbose("FMLE start to publish stream %s.", req->stream.c_str());
             
             if ((ret = rtmp->start_fmle_publish(res->stream_id)) != ERROR_SUCCESS) {
+                srs_error("start to publish stream failed. ret=%d", ret);
+                return ret;
+            }
+            
+            return publishing(source);
+        }
+        case SrsRtmpConnHaivisionPublish: {
+            srs_verbose("Haivision start to publish stream %s.", req->stream.c_str());
+            
+            if ((ret = rtmp->start_haivision_publish(res->stream_id)) != ERROR_SUCCESS) {
                 srs_error("start to publish stream failed. ret=%d", ret);
                 return ret;
             }
@@ -831,7 +849,7 @@ int SrsRtmpConn::publishing(SrsSource* source)
         // @see: https://github.com/ossrs/srs/issues/237
         SrsPublishRecvThread trd(rtmp, req, 
             st_netfd_fileno(stfd), 0, this, source,
-            client_type == SrsRtmpConnFMLEPublish,
+            client_type != SrsRtmpConnFlashPublish,
             vhost_is_edge);
 
         srs_info("start to publish stream %s success", req->stream.c_str());
