@@ -338,6 +338,7 @@ Remark:
 
 ## Releases
 
+* 2017-04-18, [Release v2.0-r1][r2.0r1], 2.0 release1, 2.0.239, 86515 lines.
 * 2017-03-03, [Release v2.0-r0][r2.0r0], 2.0 release0, 2.0.234, 86373 lines.
 * 2017-01-18, [Release v2.0-b4][r2.0b4], 2.0 beta4, 2.0.230, 86334 lines.
 * 2016-11-13, [Release v2.0-b3][r2.0b3], 2.0 beta3, 2.0.223, 86685 lines.
@@ -374,6 +375,11 @@ Remark:
 
 ## History
 
+* v2.0, 2017-05-01, Fix [#865][bug #865], shouldn't remove ts/m3u8 when hls_dispose disabled. 2.0.242
+* v2.0, 2017-04-30, Fix [#636][bug #636], FD leak for requesting empty HTTP stream. 2.0.241
+* v2.0, 2017-04-23, Fix [#851][bug #851], HTTP API support number of video frames for FPS. 2.0.240
+* <strong>v2.0, 2017-04-18, [2.0 release1(2.0.239)][r2.0r1] released. 86515 lines.</strong>
+* v2.0, 2017-04-18, Fix [#848][bug #848], crash at HTTP fast buffer grow. 2.0.239
 * v2.0, 2017-04-15, Fix [#844][bug #844], support Haivision encoder. 2.0.238
 * v2.0, 2017-04-15, Merge [#846][bug #846], fix fd leak for FLV stream caster. 2.0.237
 * v2.0, 2017-04-15, Merge [#841][bug #841], avoid the duplicated sps/pps in ts. 2.0.236
@@ -1325,10 +1331,15 @@ Winlin
 [bug #841]: https://github.com/ossrs/srs/issues/841
 [bug #846]: https://github.com/ossrs/srs/issues/846
 [bug #844]: https://github.com/ossrs/srs/issues/844
+[bug #848]: https://github.com/ossrs/srs/issues/848
+[bug #851]: https://github.com/ossrs/srs/issues/851
+[bug #636]: https://github.com/ossrs/srs/issues/636
+[bug #865]: https://github.com/ossrs/srs/issues/865
 [bug #xxxxxxxxxx]: https://github.com/ossrs/srs/issues/xxxxxxxxxx
 
 [exo #828]: https://github.com/google/ExoPlayer/pull/828
 
+[r2.0r1]: https://github.com/ossrs/srs/releases/tag/v2.0-r1
 [r2.0r0]: https://github.com/ossrs/srs/releases/tag/v2.0-r0
 [r2.0b4]: https://github.com/ossrs/srs/releases/tag/v2.0-b4
 [r2.0b3]: https://github.com/ossrs/srs/releases/tag/v2.0-b3
@@ -1373,7 +1384,7 @@ Winlin
 [branch2]: https://github.com/ossrs/srs/tree/2.0release
 [release2]: https://github.com/ossrs/srs/wiki/v1_CN_Product#release20
 [release3]: https://github.com/ossrs/srs/wiki/v1_CN_Product#release30
-[centos0]: http://winlinvip.github.io/srs.release/releases/files/SRS-CentOS6-x86_64-2.0.234.zip
-[centos1]: http://www.ossrs.net/srs.release/releases/files/SRS-CentOS6-x86_64-2.0.234.zip
+[centos0]: http://winlinvip.github.io/srs.release/releases/files/SRS-CentOS6-x86_64-2.0.239.zip
+[centos1]: http://www.ossrs.net/srs.release/releases/files/SRS-CentOS6-x86_64-2.0.239.zip
 
 >>>>>>> ossrs/2.0release

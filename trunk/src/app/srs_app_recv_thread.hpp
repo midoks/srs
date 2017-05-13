@@ -43,6 +43,8 @@ class SrsRtmpConn;
 class SrsSource;
 class SrsRequest;
 class SrsConsumer;
+class SrsHttpConn;
+class SrsResponseOnlyHttpConn;
 
 /**
  * for the recv thread to handle the message.
@@ -154,6 +156,8 @@ private:
     SrsRequest* req;
     // the msgs already got.
     int64_t _nb_msgs;
+    // The video frames we got.
+    uint64_t video_frames;
     // for mr(merged read),
     // @see https://github.com/ossrs/srs/issues/241
     bool mr;
@@ -186,6 +190,7 @@ public:
     */
     virtual int wait(int timeout_ms);
     virtual int64_t nb_msgs();
+    virtual uint64_t nb_video_frames();
     virtual int error_code();
     virtual void set_cid(int v);
     virtual int get_cid();
@@ -210,6 +215,30 @@ public:
     virtual int on_reload_vhost_realtime(std::string vhost);
 private:
     virtual void set_socket_buffer(int sleep_ms);
+};
+
+/**
+ * The HTTP receive thread, try to read messages util EOF.
+ * For example, the HTTP FLV serving thread will use the receive thread to break
+ * when client closed the request, to avoid FD leak.
+ * @see https://github.com/ossrs/srs/issues/636#issuecomment-298208427
+ */
+class SrsHttpRecvThread : public ISrsOneCycleThreadHandler
+{
+private:
+    SrsResponseOnlyHttpConn* conn;
+    SrsOneCycleThread* trd;
+    int error;
+public:
+    SrsHttpRecvThread(SrsResponseOnlyHttpConn* c);
+    virtual ~SrsHttpRecvThread();
+public:
+    virtual int start();
+public:
+    virtual int error_code();
+// interface ISrsOneCycleThreadHandler
+public:
+    virtual int cycle();
 };
 
 #endif

@@ -31,6 +31,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <srs_core_performance.hpp>
 #include <srs_app_config.hpp>
 #include <srs_app_source.hpp>
+#include <srs_app_http_conn.hpp>
+#include <srs_core_autofree.hpp>
 
 using namespace std;
 
@@ -257,6 +259,7 @@ SrsPublishRecvThread::SrsPublishRecvThread(
 
     recv_error_code = ERROR_SUCCESS;
     _nb_msgs = 0;
+    video_frames = 0;
     error = st_cond_new();
     ncid = cid = 0;
     
@@ -296,6 +299,11 @@ int SrsPublishRecvThread::wait(int timeout_ms)
 int64_t SrsPublishRecvThread::nb_msgs()
 {
     return _nb_msgs;
+}
+
+uint64_t SrsPublishRecvThread::nb_video_frames()
+{
+    return video_frames;
 }
 
 int SrsPublishRecvThread::error_code()
@@ -377,6 +385,10 @@ int SrsPublishRecvThread::handle(SrsCommonMessage* msg)
     }
 
     _nb_msgs++;
+    
+    if (msg->header.is_video()) {
+        video_frames++;
+    }
     
     // log to show the time of recv thread.
     srs_verbose("recv thread now=%"PRId64"us, got msg time=%"PRId64"ms, size=%d",
@@ -511,5 +523,44 @@ void SrsPublishRecvThread::set_socket_buffer(int sleep_ms)
         SRS_MR_SMALL_BYTES, realtime);
 
     rtmp->set_recv_buffer(nb_rbuf);
+}
+
+SrsHttpRecvThread::SrsHttpRecvThread(SrsResponseOnlyHttpConn* c)
+{
+    conn = c;
+    error = ERROR_SUCCESS;
+    trd = new SrsOneCycleThread("http-receive", this);
+}
+
+SrsHttpRecvThread::~SrsHttpRecvThread()
+{
+    srs_freep(trd);
+}
+
+int SrsHttpRecvThread::start()
+{
+    return trd->start();
+}
+
+int SrsHttpRecvThread::error_code()
+{
+    return error;
+}
+
+int SrsHttpRecvThread::cycle()
+{
+    int ret = ERROR_SUCCESS;
+    
+    while (true) {
+        ISrsHttpMessage* req = NULL;
+        SrsAutoFree(ISrsHttpMessage, req);
+        
+        if ((ret = conn->pop_message(&req)) != ERROR_SUCCESS) {
+            error = ret;
+            break;
+        }
+    }
+    
+    return ret;
 }
 
